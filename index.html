@@ -1,0 +1,2777 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Fine-Tuning Studio</title>
+    <style>
+      :root {
+        --bg: #0d1117;
+        --bg-2: #161b22;
+        --bg-3: #1c2128;
+        --border: #30363d;
+        --border-light: #21262d;
+        --text: #e6edf3;
+        --text-dim: #8b949e;
+        --text-mute: #6e7681;
+        --accent: #7c3aed;
+        --accent-2: #a78bfa;
+        --accent-glow: rgba(124, 58, 237, 0.35);
+        --green: #3fb950;
+        --amber: #d29922;
+        --red: #f85149;
+        --blue: #58a6ff;
+        --radius: 10px;
+        --radius-sm: 6px;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        font-size: 14px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+      button {
+        font-family: inherit;
+        cursor: pointer;
+      }
+      input,
+      select {
+        font-family: inherit;
+      }
+
+      /* ---------- Layout ---------- */
+      .app {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        grid-template-rows: 60px 1fr;
+        grid-template-areas:
+          "header header"
+          "main   sidebar";
+        height: 100vh;
+        overflow: hidden;
+      }
+      .header {
+        grid-area: header;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg-2);
+        z-index: 10;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        font-size: 15px;
+      }
+      .brand-mark {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--accent), #4f46e5);
+        display: grid;
+        place-items: center;
+        box-shadow: 0 0 16px var(--accent-glow);
+        font-size: 14px;
+      }
+      .brand small {
+        color: var(--text-dim);
+        font-weight: 400;
+        font-size: 12px;
+        margin-left: 4px;
+      }
+
+      .main {
+        grid-area: main;
+        overflow-y: auto;
+        padding: 24px 32px 60px;
+        scroll-behavior: smooth;
+      }
+      .sidebar {
+        grid-area: sidebar;
+        border-left: 1px solid var(--border);
+        background: var(--bg-2);
+        overflow-y: auto;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      /* ---------- Section ---------- */
+      .section {
+        margin-bottom: 28px;
+      }
+      .section-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .section-num {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        background: var(--bg-3);
+        border: 1px solid var(--border);
+        display: grid;
+        place-items: center;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-dim);
+      }
+      .section-head h2 {
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .section-head p {
+        font-size: 12px;
+        color: var(--text-dim);
+        margin-left: auto;
+      }
+
+      .card {
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 18px;
+      }
+
+      /* ---------- Model cards ---------- */
+      .model-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+      .model-card {
+        text-align: left;
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 14px;
+        transition: all 0.15s ease;
+        position: relative;
+        color: #fff;
+      }
+      .model-card:hover {
+        border-color: #484f58;
+        transform: translateY(-1px);
+      }
+      .model-card.active {
+        border-color: var(--accent);
+        background: linear-gradient(
+          180deg,
+          rgba(124, 58, 237, 0.08),
+          transparent
+        );
+        box-shadow:
+          0 0 0 1px var(--accent),
+          0 4px 20px var(--accent-glow);
+      }
+      .model-card.active::after {
+        content: "✓";
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        font-size: 11px;
+        display: grid;
+        place-items: center;
+      }
+      .model-card h4 {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .model-card .ver {
+        display: inline-block;
+        font-size: 10px;
+        padding: 1px 6px;
+        border-radius: 4px;
+        background: var(--bg-3);
+        color: var(--text-dim);
+        margin-bottom: 6px;
+        font-family: ui-monospace, monospace;
+      }
+      .model-card p {
+        font-size: 11.5px;
+        color: var(--text-dim);
+        line-height: 1.4;
+      }
+      .model-card .base {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border-light);
+        font-size: 10.5px;
+        color: var(--text-mute);
+        font-family: ui-monospace, monospace;
+      }
+
+      .model-detail {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+        padding: 14px;
+        background: var(--bg-3);
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-light);
+      }
+      .detail-item label {
+        display: block;
+        font-size: 10.5px;
+        color: var(--text-mute);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 3px;
+      }
+      .detail-item span {
+        font-size: 13px;
+        font-weight: 500;
+      }
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 20px;
+        background: rgba(63, 185, 80, 0.12);
+        color: var(--green);
+        border: 1px solid rgba(63, 185, 80, 0.3);
+      }
+      .status-badge::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+      .status-badge.idle {
+        background: rgba(139, 148, 158, 0.12);
+        color: var(--text-dim);
+        border-color: var(--border);
+      }
+
+      /* ---------- Toggles / Training options ---------- */
+      .options-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 10px;
+      }
+      .opt {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg-2);
+        transition: all 0.15s ease;
+        overflow: hidden;
+      }
+      .opt.on {
+        border-color: rgba(124, 58, 237, 0.5);
+        background: linear-gradient(
+          180deg,
+          rgba(124, 58, 237, 0.06),
+          transparent
+        );
+      }
+      .opt-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .opt-head:hover {
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .switch {
+        position: relative;
+        width: 34px;
+        height: 20px;
+        flex-shrink: 0;
+        background: var(--bg-3);
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        transition: all 0.18s ease;
+      }
+      .switch::after {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--text-dim);
+        transition: all 0.18s ease;
+      }
+      .opt.on .switch {
+        background: var(--accent);
+        border-color: var(--accent);
+      }
+      .opt.on .switch::after {
+        left: 16px;
+        background: #fff;
+      }
+      .opt-head .txt {
+        flex: 1;
+      }
+      .opt-head .txt h4 {
+        font-size: 13px;
+        font-weight: 500;
+      }
+      .opt-head .txt p {
+        font-size: 11.5px;
+        color: var(--text-dim);
+        margin-top: 1px;
+      }
+      .opt-body {
+        max-height: 0;
+        overflow: hidden;
+        transition:
+          max-height 0.25s ease,
+          padding 0.25s ease;
+        padding: 0 14px;
+        border-top: 1px solid transparent;
+      }
+      .opt.on .opt-body {
+        max-height: 400px;
+        padding: 12px 14px 14px;
+        border-top-color: var(--border-light);
+      }
+      .opt-body .field {
+        margin-bottom: 10px;
+      }
+      .opt-body .field:last-child {
+        margin-bottom: 0;
+      }
+
+      /* ---------- Form fields ---------- */
+      .field {
+        margin-bottom: 16px;
+      }
+      .field:last-child {
+        margin-bottom: 0;
+      }
+      .field-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12.5px;
+        font-weight: 500;
+        margin-bottom: 6px;
+      }
+      .field-label .val {
+        margin-left: auto;
+        font-family: ui-monospace, monospace;
+        font-size: 12px;
+        color: var(--accent-2);
+        background: rgba(124, 58, 237, 0.12);
+        padding: 1px 7px;
+        border-radius: 4px;
+        border: 1px solid rgba(124, 58, 237, 0.25);
+      }
+      .field-help {
+        font-size: 11px;
+        color: var(--text-mute);
+        margin-top: 5px;
+      }
+
+      .tip {
+        display: inline-grid;
+        place-items: center;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        font-size: 9px;
+        color: var(--text-mute);
+        cursor: help;
+        position: relative;
+      }
+      .tip:hover {
+        color: var(--text);
+        border-color: var(--text-dim);
+      }
+      .tip::before {
+        content: attr(data-tip);
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1f242c;
+        color: var(--text);
+        border: 1px solid var(--border);
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 400;
+        white-space: normal;
+        width: 220px;
+        text-align: left;
+        line-height: 1.4;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.12s;
+        z-index: 100;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      }
+      .tip:hover::before {
+        opacity: 1;
+      }
+
+      input[type="number"],
+      input[type="text"],
+      select {
+        width: 100%;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 8px 10px;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      input[type="number"]:focus,
+      input[type="text"]:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-glow);
+      }
+      input.invalid {
+        border-color: var(--red);
+        box-shadow: 0 0 0 3px rgba(248, 81, 73, 0.15);
+      }
+      select {
+        appearance: none;
+        cursor: pointer;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        padding-right: 30px;
+      }
+
+      input[type="range"] {
+        width: 100%;
+        -webkit-appearance: none;
+        appearance: none;
+        height: 4px;
+        background: var(--bg-3);
+        border-radius: 4px;
+        outline: none;
+        margin: 8px 0;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--accent);
+        border: 2px solid var(--bg-2);
+        cursor: pointer;
+        box-shadow:
+          0 0 0 1px var(--accent),
+          0 0 10px var(--accent-glow);
+        transition: transform 0.1s;
+      }
+      input[type="range"]::-webkit-slider-thumb:hover {
+        transform: scale(1.15);
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--accent);
+        border: 2px solid var(--bg-2);
+        cursor: pointer;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .row-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 14px;
+      }
+
+      /* ---------- Dataset ---------- */
+      .dataset-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 16px;
+      }
+      .dropzone {
+        border: 1.5px dashed var(--border);
+        border-radius: var(--radius);
+        padding: 22px 16px;
+        text-align: center;
+        transition: all 0.15s;
+        cursor: pointer;
+        background: var(--bg);
+      }
+      .dropzone:hover {
+        border-color: var(--accent);
+        background: rgba(124, 58, 237, 0.04);
+      }
+      .dropzone.drag {
+        border-color: var(--accent);
+        background: rgba(124, 58, 237, 0.08);
+      }
+      .dropzone .ico {
+        font-size: 22px;
+        margin-bottom: 6px;
+        opacity: 0.7;
+      }
+      .dropzone p {
+        font-size: 12.5px;
+        color: var(--text-dim);
+      }
+      .dropzone p b {
+        color: var(--accent-2);
+        font-weight: 500;
+      }
+      .dropzone small {
+        display: block;
+        font-size: 10.5px;
+        color: var(--text-mute);
+        margin-top: 4px;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .stat {
+        background: var(--bg);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-sm);
+        padding: 12px;
+      }
+      .stat label {
+        font-size: 10.5px;
+        color: var(--text-mute);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        display: block;
+        margin-bottom: 4px;
+      }
+      .stat .num {
+        font-size: 18px;
+        font-weight: 600;
+        font-family: ui-monospace, monospace;
+      }
+      .stat .num.accent {
+        color: var(--accent-2);
+      }
+      .stat .num.green {
+        color: var(--green);
+      }
+
+      .bar {
+        height: 6px;
+        border-radius: 4px;
+        background: var(--bg-3);
+        overflow: hidden;
+        display: flex;
+        margin-top: 8px;
+      }
+      .bar > div {
+        height: 100%;
+        transition: width 0.3s;
+      }
+
+      .preview-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 11.5px;
+        background: var(--bg);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+        border: 1px solid var(--border-light);
+      }
+      .preview-table th {
+        text-align: left;
+        padding: 8px 10px;
+        background: var(--bg-3);
+        color: var(--text-mute);
+        font-weight: 500;
+        font-size: 10.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        border-bottom: 1px solid var(--border);
+      }
+      .preview-table td {
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border-light);
+        color: var(--text-dim);
+        max-width: 220px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .preview-table tr:last-child td {
+        border-bottom: none;
+      }
+      .preview-table tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      /* ---------- Advanced ---------- */
+      details.advanced {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg-2);
+        overflow: hidden;
+      }
+      details.advanced > summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 14px 18px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13.5px;
+        font-weight: 500;
+        user-select: none;
+      }
+      details.advanced > summary::-webkit-details-marker {
+        display: none;
+      }
+      details.advanced > summary::before {
+        content: "▸";
+        color: var(--text-dim);
+        font-size: 11px;
+        transition: transform 0.2s;
+      }
+      details.advanced[open] > summary::before {
+        transform: rotate(90deg);
+      }
+      details.advanced > summary .count {
+        margin-left: auto;
+        font-size: 11px;
+        color: var(--text-mute);
+        background: var(--bg-3);
+        padding: 2px 8px;
+        border-radius: 20px;
+      }
+      details.advanced > .adv-body {
+        padding: 0 18px 18px;
+        border-top: 1px solid var(--border-light);
+        padding-top: 18px;
+      }
+      .adv-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 14px;
+      }
+
+      .checkline {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.12s;
+        border: 1px solid transparent;
+      }
+      .checkline:hover {
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .checkline.on {
+        background: rgba(124, 58, 237, 0.08);
+        border-color: rgba(124, 58, 237, 0.25);
+      }
+      .cb {
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+        flex-shrink: 0;
+        border: 1.5px solid var(--border);
+        background: var(--bg);
+        display: grid;
+        place-items: center;
+        transition: all 0.12s;
+      }
+      .checkline.on .cb {
+        background: var(--accent);
+        border-color: var(--accent);
+      }
+      .cb::after {
+        content: "✓";
+        color: #fff;
+        font-size: 10px;
+        opacity: 0;
+        transition: opacity 0.12s;
+      }
+      .checkline.on .cb::after {
+        opacity: 1;
+      }
+      .checkline .lbl {
+        font-size: 12.5px;
+      }
+      .checkline .desc {
+        font-size: 11px;
+        color: var(--text-mute);
+      }
+
+      /* ---------- Sidebar ---------- */
+      .side-title {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-mute);
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+      .summary-list {
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+      }
+      .sum-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 12.5px;
+      }
+      .sum-row .k {
+        color: var(--text-dim);
+        flex-shrink: 0;
+      }
+      .sum-row .v {
+        text-align: right;
+        font-weight: 500;
+        color: var(--text);
+        word-break: break-word;
+      }
+      .sum-row .v.mono {
+        font-family: ui-monospace, monospace;
+        color: var(--accent-2);
+      }
+      .sum-row .v.dim {
+        color: var(--text-dim);
+        font-weight: 400;
+        font-style: italic;
+      }
+
+      .estimate {
+        background: var(--bg-3);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius);
+        padding: 14px;
+      }
+      .est-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12.5px;
+        padding: 5px 0;
+      }
+      .est-row .k {
+        color: var(--text-dim);
+      }
+      .est-row .v {
+        font-weight: 600;
+        font-family: ui-monospace, monospace;
+      }
+      .est-row.total {
+        border-top: 1px solid var(--border);
+        margin-top: 6px;
+        padding-top: 10px;
+      }
+      .est-row.total .v {
+        color: var(--accent-2);
+        font-size: 15px;
+      }
+      .est-note {
+        font-size: 10.5px;
+        color: var(--text-mute);
+        margin-top: 10px;
+        line-height: 1.4;
+        font-style: italic;
+      }
+
+      .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: auto;
+      }
+      .btn {
+        width: 100%;
+        padding: 10px 16px;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-weight: 600;
+        border: 1px solid var(--border);
+        background: var(--bg-3);
+        color: var(--text);
+        transition: all 0.15s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+      .btn:hover:not(:disabled) {
+        background: #262c34;
+        border-color: #484f58;
+      }
+      .btn.primary {
+        background: linear-gradient(135deg, var(--accent), #5b21b6);
+        border-color: var(--accent);
+        color: #fff;
+        box-shadow: 0 4px 16px var(--accent-glow);
+      }
+      .btn.primary:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 22px var(--accent-glow);
+      }
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .btn.ghost {
+        background: transparent;
+      }
+      .btn .toast-ok {
+        font-size: 11px;
+        color: var(--green);
+      }
+
+      /* ---------- Validation ---------- */
+      .validation {
+        border-radius: var(--radius-sm);
+        padding: 10px 12px;
+        font-size: 12px;
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        line-height: 1.4;
+      }
+      .validation.error {
+        background: rgba(248, 81, 73, 0.1);
+        border: 1px solid rgba(248, 81, 73, 0.3);
+        color: #ff9b95;
+      }
+      .validation.warn {
+        background: rgba(210, 153, 34, 0.1);
+        border: 1px solid rgba(210, 153, 34, 0.3);
+        color: #f0c674;
+      }
+      .validation .i {
+        flex-shrink: 0;
+      }
+      .validation ul {
+        margin: 4px 0 0 16px;
+        padding: 0;
+      }
+      .validation li {
+        margin: 2px 0;
+      }
+
+      /* ---------- Modal ---------- */
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
+        display: grid;
+        place-items: center;
+        z-index: 200;
+        padding: 20px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+      }
+      .overlay.on {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .modal {
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        width: 100%;
+        max-width: 480px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+        transform: scale(0.96);
+        transition: transform 0.2s;
+      }
+      .overlay.on .modal {
+        transform: scale(1);
+      }
+      .modal-head {
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .modal-head h3 {
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .modal-body {
+        padding: 18px 20px;
+      }
+      .modal-body .sum-row {
+        padding: 6px 0;
+        border-bottom: 1px solid var(--border-light);
+      }
+      .modal-body .sum-row:last-child {
+        border-bottom: none;
+      }
+      .modal-foot {
+        padding: 16px 20px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 10px;
+      }
+      .modal-foot .btn {
+        width: auto;
+        flex: 1;
+      }
+
+      /* ---------- Progress ---------- */
+      .progress-view {
+        padding: 40px 20px;
+        max-width: 780px;
+        margin: 0 auto;
+      }
+      .progress-view h1 {
+        font-size: 20px;
+        margin-bottom: 6px;
+      }
+      .progress-view > p {
+        color: var(--text-dim);
+        font-size: 13px;
+        margin-bottom: 24px;
+      }
+      .prog-ring-wrap {
+        display: flex;
+        align-items: center;
+        gap: 28px;
+        flex-wrap: wrap;
+        padding: 26px;
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        margin-bottom: 20px;
+      }
+      .ring {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        flex-shrink: 0;
+      }
+      .ring svg {
+        transform: rotate(-90deg);
+      }
+      .ring .pct {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font-size: 26px;
+        font-weight: 700;
+        font-family: ui-monospace, monospace;
+        color: var(--accent-2);
+      }
+      .prog-meta {
+        flex: 1;
+        min-width: 220px;
+      }
+      .prog-meta .row-s {
+        display: flex;
+        justify-content: space-between;
+        padding: 7px 0;
+        border-bottom: 1px solid var(--border-light);
+        font-size: 13px;
+      }
+      .prog-meta .row-s:last-child {
+        border-bottom: none;
+      }
+      .prog-meta .row-s .k {
+        color: var(--text-dim);
+      }
+      .prog-meta .row-s .v {
+        font-family: ui-monospace, monospace;
+        font-weight: 500;
+      }
+
+      .metrics-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+      .metric {
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px;
+      }
+      .metric label {
+        font-size: 11px;
+        color: var(--text-mute);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .metric .big {
+        font-size: 24px;
+        font-weight: 700;
+        font-family: ui-monospace, monospace;
+        margin: 6px 0;
+      }
+      .metric .trend {
+        font-size: 11.5px;
+        color: var(--green);
+      }
+      .metric .trend.up {
+        color: var(--amber);
+      }
+
+      .log {
+        background: #010409;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 14px;
+        font-family: ui-monospace, monospace;
+        font-size: 11.5px;
+        max-height: 200px;
+        overflow-y: auto;
+        color: var(--text-dim);
+        line-height: 1.6;
+      }
+      .log .line {
+        display: flex;
+        gap: 10px;
+      }
+      .log .line .t {
+        color: var(--text-mute);
+        flex-shrink: 0;
+      }
+      .log .line .m {
+        color: var(--text);
+      }
+      .log .line .m.ok {
+        color: var(--green);
+      }
+      .log .line .m.info {
+        color: var(--blue);
+      }
+
+      .pulse {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.6);
+        animation: pulse 1.6s infinite;
+      }
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.5);
+        }
+        70% {
+          box-shadow: 0 0 0 10px rgba(63, 185, 80, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(63, 185, 80, 0);
+        }
+      }
+
+      /* ---------- Toast ---------- */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(80px);
+        background: var(--bg-3);
+        border: 1px solid var(--border);
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        transition: transform 0.25s ease;
+        z-index: 300;
+      }
+      .toast.on {
+        transform: translateX(-50%) translateY(0);
+      }
+
+      /* ---------- Responsive ---------- */
+      @media (max-width: 980px) {
+        .app {
+          grid-template-columns: 1fr;
+          grid-template-areas: "header" "main";
+        }
+        .sidebar {
+          position: fixed;
+          right: 0;
+          top: 60px;
+          bottom: 0;
+          width: 340px;
+          transform: translateX(100%);
+          transition: transform 0.25s;
+          z-index: 50;
+          box-shadow: -20px 0 40px rgba(0, 0, 0, 0.5);
+        }
+        .sidebar.open {
+          transform: translateX(0);
+        }
+        .main {
+          padding: 20px 16px 60px;
+        }
+        .dataset-grid {
+          grid-template-columns: 1fr;
+        }
+        .row,
+        .row-3 {
+          grid-template-columns: 1fr;
+        }
+        .metrics-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .menu-btn {
+        display: none;
+        background: var(--bg-3);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+      }
+      @media (max-width: 980px) {
+        .menu-btn {
+          display: block;
+        }
+      }
+
+      /* scrollbar */
+      ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #30363d;
+        border-radius: 6px;
+        border: 2px solid var(--bg);
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #484f58;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <div class="brand">
+          <div class="brand-mark">◆</div>
+          <div>Fine-Tuning Studio <small>v2.4</small></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 14px">
+          <span class="status-badge idle" id="hdrStatus"
+            >Idle · Ready to configure</span
+          >
+          <button
+            class="menu-btn"
+            onclick="
+              document.querySelector('.sidebar').classList.toggle('open')
+            "
+          >
+            ☰ Summary
+          </button>
+        </div>
+      </header>
+
+      <!-- ============ MAIN ============ -->
+      <main class="main" id="mainView">
+        <div id="configView">
+          <!-- MODEL -->
+          <section class="section">
+            <div class="section-head">
+              <div class="section-num">1</div>
+              <h2>Select Model</h2>
+              <p id="modelCount">4 available</p>
+            </div>
+            <div class="model-grid" id="modelGrid"></div>
+            <div class="model-detail" id="modelDetail"></div>
+          </section>
+
+          <!-- TRAINING OPTIONS -->
+          <section class="section">
+            <div class="section-head">
+              <div class="section-num">2</div>
+              <h2>Fine-Tuning Configuration</h2>
+              <p id="optCount">0 of 7 enabled</p>
+            </div>
+            <div class="options-grid" id="optionsGrid"></div>
+          </section>
+
+          <!-- PARAMETERS -->
+          <section class="section">
+            <div class="section-head">
+              <div class="section-num">3</div>
+              <h2>Training Parameters</h2>
+              <p>Common hyperparameters</p>
+            </div>
+            <div class="card">
+              <div class="row">
+                <div class="field">
+                  <div class="field-label">
+                    Learning Rate
+                    <span
+                      class="tip"
+                      data-tip="How much the model adjusts per step. Smaller = more stable but slower. Typical: 1e-4 to 5e-5."
+                      >?</span
+                    >
+                    <span class="val" id="lrVal">0.0002</span>
+                  </div>
+                  <input
+                    type="range"
+                    id="lr"
+                    min="0.00001"
+                    max="0.001"
+                    step="0.00001"
+                    value="0.0002"
+                  />
+                  <div class="field-help">
+                    Recommended: 1e-4 to 5e-5 for most fine-tuning
+                  </div>
+                </div>
+                <div class="field">
+                  <div class="field-label">
+                    Number of Epochs
+                    <span
+                      class="tip"
+                      data-tip="How many times the model sees the full dataset. 2-4 is typical; more risks overfitting."
+                      >?</span
+                    >
+                    <span class="val" id="epVal">3</span>
+                  </div>
+                  <input
+                    type="range"
+                    id="epochs"
+                    min="1"
+                    max="20"
+                    step="1"
+                    value="3"
+                  />
+                  <div class="field-help">
+                    2–4 recommended for most datasets
+                  </div>
+                </div>
+              </div>
+
+              <div class="row-3">
+                <div class="field">
+                  <div class="field-label">
+                    Batch Size
+                    <span
+                      class="tip"
+                      data-tip="Examples processed per step. Larger = faster but needs more memory."
+                      >?</span
+                    >
+                  </div>
+                  <select id="batchSize">
+                    <option>4</option>
+                    <option>8</option>
+                    <option selected>16</option>
+                    <option>32</option>
+                    <option>64</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <div class="field-label">
+                    Max Sequence Length
+                    <span
+                      class="tip"
+                      data-tip="Maximum tokens per example. Longer = more context but more memory."
+                      >?</span
+                    >
+                  </div>
+                  <select id="maxSeq">
+                    <option>256</option>
+                    <option>512</option>
+                    <option selected>1024</option>
+                    <option>2048</option>
+                    <option>4096</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <div class="field-label">
+                    Training Steps
+                    <span
+                      class="tip"
+                      data-tip="Total optimization steps. Auto-calculated from epochs × dataset size ÷ batch size."
+                      >?</span
+                    >
+                  </div>
+                  <input
+                    type="number"
+                    id="trainSteps"
+                    value="900"
+                    min="10"
+                    max="100000"
+                  />
+                </div>
+              </div>
+
+              <div class="row-3">
+                <div class="field">
+                  <div class="field-label">
+                    Warmup Steps
+                    <span
+                      class="tip"
+                      data-tip="Gradually increases learning rate at the start for stability."
+                      >?</span
+                    >
+                  </div>
+                  <input
+                    type="number"
+                    id="warmup"
+                    value="100"
+                    min="0"
+                    max="5000"
+                  />
+                </div>
+                <div class="field">
+                  <div class="field-label">
+                    Weight Decay
+                    <span
+                      class="tip"
+                      data-tip="Regularization to prevent overfitting. 0.01 is a common default."
+                      >?</span
+                    >
+                    <span class="val" id="wdVal">0.01</span>
+                  </div>
+                  <input
+                    type="range"
+                    id="weightDecay"
+                    min="0"
+                    max="0.1"
+                    step="0.005"
+                    value="0.01"
+                  />
+                </div>
+                <div class="field">
+                  <div class="field-label">
+                    Random Seed
+                    <span
+                      class="tip"
+                      data-tip="Makes training reproducible. Same seed + same data = same result."
+                      >?</span
+                    >
+                  </div>
+                  <input
+                    type="number"
+                    id="seed"
+                    value="42"
+                    min="0"
+                    max="999999"
+                  />
+                </div>
+              </div>
+
+              <div class="field">
+                <div class="field-label">
+                  Validation Split
+                  <span
+                    class="tip"
+                    data-tip="Portion of data held out to measure performance on unseen examples."
+                    >?</span
+                  >
+                  <span class="val" id="vsVal">10%</span>
+                </div>
+                <input
+                  type="range"
+                  id="valSplit"
+                  min="0"
+                  max="0.4"
+                  step="0.01"
+                  value="0.1"
+                />
+                <div class="field-help">
+                  Data reserved for validation instead of training
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- DATASET -->
+          <section class="section">
+            <div class="section-head">
+              <div class="section-num">4</div>
+              <h2>Training Data</h2>
+              <p>Dataset & preprocessing</p>
+            </div>
+            <div class="card">
+              <div class="dataset-grid">
+                <div>
+                  <div class="field">
+                    <div class="field-label">Dataset Source</div>
+                    <select id="datasetSelect">
+                      <option value="customer_support_v3">
+                        Customer Support v3 (existing)
+                      </option>
+                      <option value="product_qa_v2">
+                        Product Q&amp;A v2 (existing)
+                      </option>
+                      <option value="internal_docs_v1">
+                        Internal Docs v1 (existing)
+                      </option>
+                      <option value="upload">Upload custom dataset…</option>
+                    </select>
+                  </div>
+
+                  <div class="dropzone" id="dropzone">
+                    <div class="ico">⬆</div>
+                    <p><b>Click to upload</b> or drag &amp; drop</p>
+                    <small>JSONL, CSV, or Parquet · max 2 GB</small>
+                    <input
+                      type="file"
+                      id="fileInput"
+                      hidden
+                      accept=".jsonl,.csv,.parquet,.json"
+                    />
+                  </div>
+
+                  <div class="stats-grid">
+                    <div class="stat">
+                      <label>Training Examples</label>
+                      <div class="num accent" id="trainEx">8,420</div>
+                    </div>
+                    <div class="stat">
+                      <label>Validation Examples</label>
+                      <div class="num green" id="valEx">936</div>
+                    </div>
+                    <div class="stat">
+                      <label>Dataset Size</label>
+                      <div class="num" id="dsSize">24.6 MB</div>
+                    </div>
+                    <div class="stat">
+                      <label>Avg Tokens / Example</label>
+                      <div class="num" id="avgTok">312</div>
+                    </div>
+                  </div>
+                  <div class="bar" title="Train / Validation split">
+                    <div
+                      id="barTrain"
+                      style="background: var(--accent); width: 90%"
+                    ></div>
+                    <div
+                      id="barVal"
+                      style="background: var(--green); width: 10%"
+                    ></div>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="field">
+                    <div class="field-label">Data Augmentation</div>
+                    <label class="checkline on" data-aug>
+                      <div class="cb"></div>
+                      <div>
+                        <div class="lbl">Enable augmentation</div>
+                        <div class="desc">
+                          Paraphrase &amp; back-translate samples
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div class="field">
+                    <div class="field-label">Preprocessing</div>
+                    <label class="checkline on" data-pre="clean">
+                      <div class="cb"></div>
+                      <div class="lbl">Clean whitespace &amp; HTML</div>
+                    </label>
+                    <label class="checkline on" data-pre="dedup">
+                      <div class="cb"></div>
+                      <div class="lbl">Remove duplicates</div>
+                    </label>
+                    <label class="checkline" data-pre="mask">
+                      <div class="cb"></div>
+                      <div class="lbl">Mask PII (emails, phones)</div>
+                    </label>
+                    <label class="checkline on" data-pre="trunc">
+                      <div class="cb"></div>
+                      <div class="lbl">Truncate to max length</div>
+                    </label>
+                  </div>
+
+                  <div class="field">
+                    <div class="field-label">Sample Preview</div>
+                    <table class="preview-table">
+                      <thead>
+                        <tr>
+                          <th>Input</th>
+                          <th>Output</th>
+                        </tr>
+                      </thead>
+                      <tbody id="previewBody"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- BEHAVIOR -->
+          <section class="section">
+            <div class="section-head">
+              <div class="section-num">5</div>
+              <h2>Training Behavior</h2>
+              <p>Post-training objectives</p>
+            </div>
+            <div class="card">
+              <div class="row">
+                <div>
+                  <label class="checkline on" data-behavior="preserve">
+                    <div class="cb"></div>
+                    <div>
+                      <div class="lbl">Preserve general knowledge</div>
+                      <div class="desc">Retain broad capabilities</div>
+                    </div>
+                  </label>
+                  <label class="checkline" data-behavior="prioritize">
+                    <div class="cb"></div>
+                    <div>
+                      <div class="lbl">Prioritize training data</div>
+                      <div class="desc">Favor domain-specific answers</div>
+                    </div>
+                  </label>
+                  <label class="checkline on" data-behavior="halluc">
+                    <div class="cb"></div>
+                    <div>
+                      <div class="lbl">Reduce hallucinations</div>
+                      <div class="desc">Ground responses in facts</div>
+                    </div>
+                  </label>
+                </div>
+                <div>
+                  <label class="checkline on" data-behavior="instruct">
+                    <div class="cb"></div>
+                    <div>
+                      <div class="lbl">Improve instruction following</div>
+                      <div class="desc">Better adherence to prompts</div>
+                    </div>
+                  </label>
+                  <label class="checkline" data-behavior="style">
+                    <div class="cb"></div>
+                    <div>
+                      <div class="lbl">Match a specific writing style</div>
+                      <div class="desc">Adopt tone from examples</div>
+                    </div>
+                  </label>
+                  <label class="checkline" data-behavior="concise">
+                    <div class="cb"></div>
+                    <div>
+                      <div class="lbl">Optimize for concise responses</div>
+                      <div class="desc">Shorter, direct answers</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ADVANCED -->
+          <section class="section">
+            <div class="section-head">
+              <div class="section-num">6</div>
+              <h2>Advanced Settings</h2>
+              <p>Optional · defaults work well</p>
+            </div>
+            <details class="advanced">
+              <summary>
+                Show advanced training parameters
+                <span class="count" id="advCount">4 enabled</span>
+              </summary>
+              <div class="adv-body">
+                <div class="adv-grid">
+                  <div class="field">
+                    <div class="field-label">
+                      Optimizer
+                      <span
+                        class="tip"
+                        data-tip="Algorithm that updates model weights. AdamW is a strong default."
+                        >?</span
+                      >
+                    </div>
+                    <select id="optimizer">
+                      <option>AdamW</option>
+                      <option>Adam</option>
+                      <option>SGD</option>
+                      <option>Adafactor</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <div class="field-label">
+                      Scheduler
+                      <span
+                        class="tip"
+                        data-tip="Adjusts learning rate over time. Cosine decays smoothly."
+                        >?</span
+                      >
+                    </div>
+                    <select id="scheduler">
+                      <option>Cosine</option>
+                      <option>Linear</option>
+                      <option>Constant</option>
+                      <option>Polynomial</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <div class="field-label">
+                      Gradient Accumulation
+                      <span
+                        class="tip"
+                        data-tip="Simulate larger batch sizes on limited memory."
+                        >?</span
+                      >
+                    </div>
+                    <input
+                      type="number"
+                      id="gradAccum"
+                      value="4"
+                      min="1"
+                      max="64"
+                    />
+                  </div>
+                  <div class="field">
+                    <div class="field-label">
+                      Gradient Clipping
+                      <span
+                        class="tip"
+                        data-tip="Caps gradient magnitude to prevent training spikes."
+                        >?</span
+                      >
+                    </div>
+                    <input
+                      type="number"
+                      id="gradClip"
+                      value="1.0"
+                      min="0"
+                      max="10"
+                      step="0.1"
+                    />
+                  </div>
+                  <div class="field">
+                    <div class="field-label">Mixed Precision</div>
+                    <select id="precision">
+                      <option>bf16</option>
+                      <option>fp16</option>
+                      <option>fp32</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <div class="field-label">
+                      Checkpoint Frequency
+                      <span
+                        class="tip"
+                        data-tip="Save model snapshots every N steps."
+                        >?</span
+                      >
+                    </div>
+                    <input
+                      type="number"
+                      id="ckptFreq"
+                      value="200"
+                      min="10"
+                      max="10000"
+                    />
+                  </div>
+                  <div class="field">
+                    <div class="field-label">
+                      Evaluation Frequency
+                      <span class="tip" data-tip="Run validation every N steps."
+                        >?</span
+                      >
+                    </div>
+                    <input
+                      type="number"
+                      id="evalFreq"
+                      value="100"
+                      min="10"
+                      max="5000"
+                    />
+                  </div>
+                  <div class="field">
+                    <div class="field-label">Early Stopping</div>
+                    <label class="checkline on" id="earlyStop">
+                      <div class="cb"></div>
+                      <div class="lbl">Enable (patience: 3 evals)</div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </details>
+          </section>
+
+          <div style="height: 40px"></div>
+        </div>
+
+        <!-- PROGRESS VIEW (hidden initially) -->
+        <div id="progressView" class="progress-view" style="display: none">
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              margin-bottom: 6px;
+            "
+          >
+            <span class="pulse"></span>
+            <h1 style="margin: 0">Fine-Tuning in Progress</h1>
+          </div>
+          <p id="progSubtitle">
+            Training Llama Model B on Customer Support v3…
+          </p>
+
+          <div class="prog-ring-wrap">
+            <div class="ring">
+              <svg width="120" height="120">
+                <circle
+                  cx="60"
+                  cy="60"
+                  r="52"
+                  stroke="#30363d"
+                  stroke-width="8"
+                  fill="none"
+                />
+                <circle
+                  id="ringFg"
+                  cx="60"
+                  cy="60"
+                  r="52"
+                  stroke="#7c3aed"
+                  stroke-width="8"
+                  fill="none"
+                  stroke-linecap="round"
+                  stroke-dasharray="326.7"
+                  stroke-dashoffset="326.7"
+                  style="
+                    transition: stroke-dashoffset 0.4s ease;
+                    filter: drop-shadow(0 0 6px rgba(124, 58, 237, 0.6));
+                  "
+                />
+              </svg>
+              <div class="pct" id="progPct">0%</div>
+            </div>
+            <div class="prog-meta">
+              <div class="row-s">
+                <span class="k">Status</span
+                ><span class="v" id="pStatus">Initializing…</span>
+              </div>
+              <div class="row-s">
+                <span class="k">Current Step</span
+                ><span class="v" id="pStep">0 / 900</span>
+              </div>
+              <div class="row-s">
+                <span class="k">Epoch</span
+                ><span class="v" id="pEpoch">1 / 3</span>
+              </div>
+              <div class="row-s">
+                <span class="k">Estimated Remaining</span
+                ><span class="v" id="pEta">—</span>
+              </div>
+              <div class="row-s">
+                <span class="k">Elapsed</span
+                ><span class="v" id="pElapsed">00:00</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric">
+              <label>Training Loss</label>
+              <div class="big" id="pTrainLoss">—</div>
+              <div class="trend" id="pTrainTrend">decreasing</div>
+            </div>
+            <div class="metric">
+              <label>Validation Loss</label>
+              <div class="big" id="pValLoss">—</div>
+              <div class="trend" id="pValTrend">—</div>
+            </div>
+          </div>
+
+          <div class="field-label" style="margin-bottom: 8px">Live Log</div>
+          <div class="log" id="pLog"></div>
+
+          <div style="display: flex; gap: 10px; margin-top: 20px">
+            <button class="btn ghost" id="btnCancel" style="flex: 1">
+              Cancel Training
+            </button>
+            <button class="btn" id="btnNew" style="flex: 1" disabled>
+              Start New Run
+            </button>
+          </div>
+        </div>
+      </main>
+
+      <!-- ============ SIDEBAR ============ -->
+      <aside class="sidebar">
+        <div>
+          <div class="side-title">Configuration Summary</div>
+          <div class="summary-list" id="summaryList"></div>
+        </div>
+
+        <div>
+          <div class="side-title">Resource Estimate</div>
+          <div class="estimate">
+            <div class="est-row">
+              <span class="k">Training time</span
+              ><span class="v" id="estTime">~ 42 min</span>
+            </div>
+            <div class="est-row">
+              <span class="k">Compute</span
+              ><span class="v" id="estCompute">1× A100 40GB</span>
+            </div>
+            <div class="est-row">
+              <span class="k">Dataset size</span
+              ><span class="v" id="estData">24.6 MB</span>
+            </div>
+            <div class="est-row">
+              <span class="k">Total tokens</span
+              ><span class="v" id="estTokens">2.9M</span>
+            </div>
+            <div class="est-row total">
+              <span class="k">Estimated cost</span
+              ><span class="v" id="estCost">$3.50</span>
+            </div>
+            <div class="est-note">
+              Estimates may change based on actual usage, hardware availability,
+              and dataset characteristics.
+            </div>
+          </div>
+        </div>
+
+        <div id="validationBox"></div>
+
+        <div class="actions">
+          <button class="btn ghost" id="btnSave">💾 Save Configuration</button>
+          <button class="btn primary" id="btnStart">▶ Start Fine-Tuning</button>
+        </div>
+      </aside>
+    </div>
+
+    <!-- CONFIRM MODAL -->
+    <div class="overlay" id="confirmOverlay">
+      <div class="modal">
+        <div class="modal-head">
+          <span style="font-size: 18px">⚙</span>
+          <h3>Confirm Fine-Tuning Job</h3>
+        </div>
+        <div class="modal-body" id="confirmBody"></div>
+        <div class="modal-foot">
+          <button class="btn ghost" onclick="closeConfirm()">Cancel</button>
+          <button class="btn primary" onclick="confirmStart()">
+            Confirm &amp; Start
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast"><span id="toastMsg">Saved</span></div>
+
+    <script>
+      /* ============================================================
+   STATE — single source of truth
+   ============================================================ */
+      const state = {
+        model: "llama_b",
+        dataset: "customer_support_v3",
+        uploadedFile: null,
+        trainingOptions: {
+          instruction: true,
+          conversation: false,
+          domain: true,
+          style: false,
+          classification: false,
+          reasoning: false,
+          retrieval: false,
+        },
+        parameters: {
+          learningRate: 0.0002,
+          epochs: 3,
+          batchSize: 16,
+          maxSeq: 1024,
+          trainSteps: 900,
+          warmup: 100,
+          weightDecay: 0.01,
+          seed: 42,
+          validationSplit: 0.1,
+        },
+        datasetCfg: {
+          augmentation: true,
+          preprocessing: { clean: true, dedup: true, mask: false, trunc: true },
+        },
+        behavior: {
+          preserve: true,
+          prioritize: false,
+          halluc: true,
+          instruct: true,
+          style: false,
+          concise: false,
+        },
+        advanced: {
+          optimizer: "AdamW",
+          scheduler: "Cosine",
+          gradAccum: 4,
+          gradClip: 1.0,
+          precision: "bf16",
+          ckptFreq: 200,
+          evalFreq: 100,
+          earlyStop: true,
+        },
+        phase: "config", // 'config' | 'training' | 'done'
+        trainedOnce: false,
+      };
+
+      /* ============================================================
+   MOCK DATA
+   ============================================================ */
+      const MODELS = {
+        gpt_a: {
+          name: "GPT Model A",
+          version: "v4.2",
+          status: "Ready",
+          desc: "General-purpose transformer with strong reasoning and broad world knowledge.",
+          base: "gpt-base-4.2",
+          params: "7B",
+          ctx: "8K",
+        },
+        llama_b: {
+          name: "Llama Model B",
+          version: "v3.1",
+          status: "Ready",
+          desc: "Efficient open-weights model, excellent balance of quality and cost.",
+          base: "llama-base-3.1",
+          params: "8B",
+          ctx: "16K",
+        },
+        mistral_c: {
+          name: "Mistral Model C",
+          version: "v0.3",
+          status: "Ready",
+          desc: "Compact and fast, optimized for low-latency production deployments.",
+          base: "mistral-base-0.3",
+          params: "7B",
+          ctx: "32K",
+        },
+        custom: {
+          name: "Custom Model",
+          version: "local",
+          status: "Not loaded",
+          desc: "Bring your own base model. Requires compatible weights and tokenizer.",
+          base: "user-provided",
+          params: "—",
+          ctx: "—",
+        },
+      };
+
+      const TRAINING_OPTIONS = [
+        {
+          id: "instruction",
+          title: "Enable instruction tuning",
+          desc: "Teach the model to follow explicit instructions",
+          extra: {
+            type: "select",
+            label: "Instruction format",
+            options: ["Alpaca", "ShareGPT", "OpenAI", "Custom"],
+          },
+        },
+        {
+          id: "conversation",
+          title: "Enable conversation tuning",
+          desc: "Multi-turn chat and dialogue handling",
+          extra: { type: "number", label: "Max conversation turns", value: 10 },
+        },
+        {
+          id: "domain",
+          title: "Enable domain-specific training",
+          desc: "Specialize in a vertical or knowledge area",
+          extra: {
+            type: "text",
+            label: "Domain name",
+            value: "Customer Support",
+          },
+        },
+        {
+          id: "style",
+          title: "Enable response-style tuning",
+          desc: "Match tone, verbosity, and formatting",
+          extra: {
+            type: "select",
+            label: "Style",
+            options: ["Professional", "Friendly", "Technical", "Casual"],
+          },
+        },
+        {
+          id: "classification",
+          title: "Enable classification training",
+          desc: "Optimize for label prediction tasks",
+          extra: { type: "number", label: "Number of classes", value: 5 },
+        },
+        {
+          id: "reasoning",
+          title: "Enable reasoning optimization",
+          desc: "Chain-of-thought and step-by-step reasoning",
+          extra: {
+            type: "select",
+            label: "Reasoning depth",
+            options: ["Light", "Standard", "Deep"],
+          },
+        },
+        {
+          id: "retrieval",
+          title: "Enable retrieval/context optimization",
+          desc: "Better use of retrieved context in answers",
+          extra: {
+            type: "number",
+            label: "Context window (tokens)",
+            value: 2048,
+          },
+        },
+      ];
+
+      const DATASETS = {
+        customer_support_v3: {
+          name: "Customer Support v3",
+          train: 8420,
+          val: 936,
+          size: "24.6 MB",
+          avgTok: 312,
+          samples: [
+            [
+              "How do I reset my password?",
+              "Go to Settings → Security → Reset Password.",
+            ],
+            [
+              "My order is late",
+              "I can check your order status — please share the order ID.",
+            ],
+            [
+              "Refund policy?",
+              "Refunds are available within 30 days of purchase.",
+            ],
+          ],
+        },
+        product_qa_v2: {
+          name: "Product Q&A v2",
+          train: 5210,
+          val: 579,
+          size: "15.1 MB",
+          avgTok: 248,
+          samples: [
+            [
+              "What is the warranty period?",
+              "The standard warranty covers 24 months.",
+            ],
+            [
+              "Does it support 5GHz WiFi?",
+              "Yes, dual-band 2.4/5GHz is supported.",
+            ],
+            ["Battery life?", "Up to 14 hours of typical use."],
+          ],
+        },
+        internal_docs_v1: {
+          name: "Internal Docs v1",
+          train: 12400,
+          val: 1378,
+          size: "38.2 MB",
+          avgTok: 420,
+          samples: [
+            [
+              "How to request PTO?",
+              "Submit via the HR portal at least 5 days in advance.",
+            ],
+            [
+              "VPN setup instructions",
+              "Install the client and use your SSO credentials.",
+            ],
+            [
+              "Expense reporting deadline",
+              "Monthly expenses are due by the 5th.",
+            ],
+          ],
+        },
+      };
+
+      /* ============================================================
+   RENDER HELPERS
+   ============================================================ */
+      const $ = (s) => document.querySelector(s);
+      const $$ = (s) => [...document.querySelectorAll(s)];
+
+      /* ---------- Model ---------- */
+      function renderModels() {
+        const g = $("#modelGrid");
+        g.innerHTML = Object.entries(MODELS)
+          .map(
+            ([id, m]) => `
+    <button class="model-card ${state.model === id ? "active" : ""}" data-model="${id}">
+      <h4>${m.name}</h4>
+      <span class="ver">${m.version}</span>
+      <p>${m.desc}</p>
+      <div class="base">Base: ${m.base}</div>
+    </button>
+  `,
+          )
+          .join("");
+        $$(".model-card").forEach(
+          (c) =>
+            (c.onclick = () => {
+              state.model = c.dataset.model;
+              renderModels();
+              renderModelDetail();
+              renderAll();
+              flash(`Model changed to ${MODELS[state.model].name}`);
+            }),
+        );
+      }
+      function renderModelDetail() {
+        const m = MODELS[state.model];
+        $("#modelDetail").innerHTML = `
+    <div class="detail-item"><label>Model</label><span>${m.name}</span></div>
+    <div class="detail-item"><label>Version</label><span>${m.version}</span></div>
+    <div class="detail-item"><label>Base Model</label><span style="font-family:ui-monospace,monospace;font-size:12px;">${m.base}</span></div>
+    <div class="detail-item"><label>Parameters</label><span>${m.params}</span></div>
+    <div class="detail-item"><label>Context Window</label><span>${m.ctx}</span></div>
+    <div class="detail-item"><label>Status</label>
+      <span class="status-badge ${m.status === "Ready" ? "" : "idle"}">${m.status}</span>
+    </div>`;
+      }
+
+      /* ---------- Training Options ---------- */
+      function renderOptions() {
+        const g = $("#optionsGrid");
+        g.innerHTML = TRAINING_OPTIONS.map((o) => {
+          const on = state.trainingOptions[o.id];
+          let body = "";
+          if (o.extra) {
+            if (o.extra.type === "select") {
+              body = `<div class="field"><div class="field-label">${o.extra.label}</div>
+          <select data-opt="${o.id}">${o.extra.options.map((x) => `<option>${x}</option>`).join("")}</select></div>`;
+            } else if (o.extra.type === "number") {
+              body = `<div class="field"><div class="field-label">${o.extra.label}</div>
+          <input type="number" data-opt="${o.id}" value="${o.extra.value}" min="1"></div>`;
+            } else {
+              body = `<div class="field"><div class="field-label">${o.extra.label}</div>
+          <input type="text" data-opt="${o.id}" value="${o.extra.value}"></div>`;
+            }
+          }
+          return `<div class="opt ${on ? "on" : ""}" data-opt-card="${o.id}">
+      <div class="opt-head" data-opt-toggle="${o.id}">
+        <div class="switch"></div>
+        <div class="txt"><h4>${o.title}</h4><p>${o.desc}</p></div>
+      </div>
+      <div class="opt-body">${body}</div>
+    </div>`;
+        }).join("");
+        $$("[data-opt-toggle]").forEach(
+          (el) =>
+            (el.onclick = (e) => {
+              e.stopPropagation();
+              const id = el.dataset.optToggle;
+              state.trainingOptions[id] = !state.trainingOptions[id];
+              renderOptions();
+              renderAll();
+            }),
+        );
+        $("#optCount").textContent =
+          Object.values(state.trainingOptions).filter(Boolean).length +
+          " of 7 enabled";
+      }
+
+      /* ---------- Dataset ---------- */
+      function renderDataset() {
+        const d = DATASETS[state.dataset] || DATASETS.customer_support_v3;
+        const vs = state.parameters.validationSplit;
+        // When validation split changes, recompute train/val counts
+        const total = Math.round(
+          d.train / (1 - (d.train > 0 ? d.train / (d.train + d.val) : 0.9)),
+        );
+        const val = Math.round((d.train * vs) / (1 - vs));
+        const train = d.train;
+
+        $("#trainEx").textContent = train.toLocaleString();
+        $("#valEx").textContent = Math.max(0, val).toLocaleString();
+        $("#dsSize").textContent = d.size;
+        $("#avgTok").textContent = d.avgTok;
+
+        const totalEx = train + val;
+        const pctT = totalEx ? (train / totalEx) * 100 : 100;
+        $("#barTrain").style.width = pctT + "%";
+        $("#barVal").style.width = 100 - pctT + "%";
+
+        $("#previewBody").innerHTML = d.samples
+          .map(
+            ([a, b]) =>
+              `<tr><td title="${a}">${a}</td><td title="${b}">${b}</td></tr>`,
+          )
+          .join("");
+      }
+
+      /* ---------- Behavior ---------- */
+      function bindChecks(selector, getter, setter) {
+        $$(selector).forEach(
+          (el) =>
+            (el.onclick = (e) => {
+              if (e.target.tagName === "INPUT") return;
+              const key =
+                el.dataset.behavior ||
+                el.dataset.pre ||
+                el.dataset.aug ||
+                el.id;
+              if (el.dataset.aug !== undefined) {
+                setter("augmentation", !getter("augmentation"));
+              } else if (el.dataset.pre) {
+                const p = getter("preprocessing");
+                p[el.dataset.pre] = !p[el.dataset.pre];
+              } else {
+                setter(key, !getter(key));
+              }
+              refreshCheckStates();
+              renderAll();
+            }),
+        );
+      }
+      function refreshCheckStates() {
+        $$("[data-behavior]").forEach((el) => {
+          el.classList.toggle("on", !!state.behavior[el.dataset.behavior]);
+        });
+        $$("[data-pre]").forEach((el) => {
+          el.classList.toggle(
+            "on",
+            !!state.datasetCfg.preprocessing[el.dataset.pre],
+          );
+        });
+        $$("[data-aug]").forEach((el) =>
+          el.classList.toggle("on", state.datasetCfg.augmentation),
+        );
+        $$("#earlyStop").forEach((el) =>
+          el.classList.toggle("on", state.advanced.earlyStop),
+        );
+      }
+
+      /* ---------- Parameters binding ---------- */
+      function bindParams() {
+        const bindRange = (id, key, fmt) => {
+          const el = $("#" + id);
+          const out =
+            $("#" + id + "Val") || $("#" + id.replace(/^lr$/, "lrVal"));
+          const display = {
+            lr: "#lrVal",
+            epochs: "#epVal",
+            weightDecay: "#wdVal",
+            valSplit: "#vsVal",
+          }[id];
+          const target = display ? $(display) : null;
+          const update = () => {
+            state.parameters[key] = parseFloat(el.value);
+            if (target) target.textContent = fmt ? fmt(el.value) : el.value;
+            renderDataset();
+            renderAll();
+          };
+          el.oninput = update;
+          update();
+        };
+        bindRange("lr", "learningRate", (v) => (+v).toFixed(5));
+        bindRange("epochs", "epochs");
+        bindRange("weightDecay", "weightDecay");
+        bindRange(
+          "valSplit",
+          "validationSplit",
+          (v) => Math.round(v * 100) + "%",
+        );
+
+        const bindNum = (id, key) => {
+          const el = $("#" + id);
+          el.oninput = () => {
+            state.parameters[key] = +el.value;
+            validate();
+            renderAll();
+          };
+        };
+        bindNum("trainSteps", "trainSteps");
+        bindNum("warmup", "warmup");
+        bindNum("seed", "seed");
+
+        const bindSel = (id, key, cast) => {
+          const el = $("#" + id);
+          el.onchange = () => {
+            state.parameters[key] = cast ? cast(el.value) : el.value;
+            validate();
+            renderAll();
+          };
+        };
+        bindSel("batchSize", "batchSize", Number);
+        bindSel("maxSeq", "maxSeq", Number);
+
+        // advanced
+        const bindAdv = (id, key, cast) => {
+          const el = $("#" + id);
+          el.oninput = el.onchange = () => {
+            state.advanced[key] = cast ? cast(el.value) : el.value;
+            validate();
+            renderAll();
+          };
+        };
+        bindAdv("optimizer", "optimizer");
+        bindAdv("scheduler", "scheduler");
+        bindAdv("gradAccum", "gradAccum", Number);
+        bindAdv("gradClip", "gradClip", Number);
+        bindAdv("precision", "precision");
+        bindAdv("ckptFreq", "ckptFreq", Number);
+        bindAdv("evalFreq", "evalFreq", Number);
+      }
+
+      /* ---------- Dataset select + dropzone ---------- */
+      function bindDataset() {
+        const sel = $("#datasetSelect");
+        sel.onchange = () => {
+          if (sel.value === "upload") {
+            $("#fileInput").click();
+          } else {
+            state.dataset = sel.value;
+            renderDataset();
+            renderAll();
+            flash("Dataset changed");
+          }
+        };
+        const dz = $("#dropzone");
+        dz.onclick = () => $("#fileInput").click();
+        ["dragover", "dragenter"].forEach((ev) =>
+          dz.addEventListener(ev, (e) => {
+            e.preventDefault();
+            dz.classList.add("drag");
+          }),
+        );
+        ["dragleave", "drop"].forEach((ev) =>
+          dz.addEventListener(ev, (e) => {
+            e.preventDefault();
+            dz.classList.remove("drag");
+          }),
+        );
+        dz.addEventListener("drop", (e) => {
+          const f = e.dataTransfer.files[0];
+          if (f) handleFile(f);
+        });
+        $("#fileInput").onchange = (e) => {
+          const f = e.target.files[0];
+          if (f) handleFile(f);
+        };
+      }
+      function handleFile(f) {
+        state.uploadedFile = f;
+        state.dataset = "customer_support_v3"; // use stats of that shape
+        dz_state(f);
+        flash(`Uploaded ${f.name}`);
+        renderDataset();
+        renderAll();
+      }
+      function dz_state(f) {
+        const dz = $("#dropzone");
+        dz.querySelector("p").innerHTML = `<b>${f.name}</b>`;
+        dz.querySelector("small").textContent =
+          `${(f.size / 1024 / 1024).toFixed(2)} MB · uploaded`;
+      }
+
+      /* ============================================================
+   DERIVED: SUMMARY, ESTIMATES, VALIDATION
+   ============================================================ */
+      function trainingTypeLabel() {
+        const t = state.trainingOptions;
+        const parts = [];
+        if (t.instruction) parts.push("Instruction");
+        if (t.conversation) parts.push("Conversation");
+        if (t.domain) parts.push("Domain");
+        if (t.style) parts.push("Style");
+        if (t.classification) parts.push("Classification");
+        if (t.reasoning) parts.push("Reasoning");
+        if (t.retrieval) parts.push("Retrieval");
+        return parts.length ? parts.join(" + ") : "None";
+      }
+
+      function renderSummary() {
+        const p = state.parameters;
+        const m = MODELS[state.model];
+        const d = DATASETS[state.dataset] || DATASETS.customer_support_v3;
+        const dsName = state.uploadedFile ? state.uploadedFile.name : d.name;
+
+        const rows = [
+          ["Model", m.name],
+          ["Dataset", dsName],
+          ["Training Type", trainingTypeLabel()],
+          ["Epochs", p.epochs],
+          ["Learning Rate", p.learningRate.toFixed(5), "mono"],
+          ["Batch Size", p.batchSize, "mono"],
+          [
+            "Validation Split",
+            Math.round(p.validationSplit * 100) + "%",
+            "mono",
+          ],
+          ["Max Seq Length", p.maxSeq, "mono"],
+          [
+            "Behavior Goals",
+            Object.entries(state.behavior).filter(([, v]) => v).length +
+              " selected",
+          ],
+        ];
+        $("#summaryList").innerHTML = rows
+          .map(
+            ([k, v, cls]) =>
+              `<div class="sum-row"><span class="k">${k}</span><span class="v ${cls || ""}">${v}</span></div>`,
+          )
+          .join("");
+        $("#hdrStatus").textContent =
+          state.phase === "config"
+            ? `Idle · ${trainingTypeLabel()} · ${p.epochs} epochs`
+            : state.phase === "training"
+              ? "Training in progress"
+              : "Run complete";
+      }
+
+      function renderEstimates() {
+        const p = state.parameters;
+        const d = DATASETS[state.dataset] || DATASETS.customer_support_v3;
+        const totalTok = (d.train + d.val) * d.avgTok;
+        // time estimate: steps * sec/step (mock)
+        const secPerStep = 2.4 * (p.batchSize / 16) * (p.maxSeq / 1024);
+        const totalMin = (p.trainSteps * secPerStep) / 60;
+        const timeStr =
+          totalMin < 60
+            ? `~ ${Math.round(totalMin)} min`
+            : `~ ${(totalMin / 60).toFixed(1)} h`;
+        const compute =
+          p.maxSeq >= 2048
+            ? "2× A100 40GB"
+            : p.maxSeq >= 1024
+              ? "1× A100 40GB"
+              : "1× A10G 24GB";
+        const cost = (totalMin / 60) * 5.0; // $5/hr mock
+        $("#estTime").textContent = timeStr;
+        $("#estCompute").textContent = compute;
+        $("#estData").textContent = d.size;
+        $("#estTokens").textContent = (totalTok / 1e6).toFixed(1) + "M";
+        $("#estCost").textContent = "$" + cost.toFixed(2);
+      }
+
+      function validate() {
+        const errs = [];
+        const p = state.parameters;
+        if (!Object.values(state.trainingOptions).some(Boolean))
+          errs.push("Enable at least one training option");
+        if (p.learningRate <= 0 || p.learningRate > 0.001)
+          errs.push("Learning rate must be between 0.00001 and 0.001");
+        if (p.epochs < 1 || p.epochs > 20)
+          errs.push("Epochs must be between 1 and 20");
+        if (p.trainSteps < 10) errs.push("Training steps must be at least 10");
+        if (p.validationSplit < 0 || p.validationSplit > 0.4)
+          errs.push("Validation split must be 0–40%");
+        if (p.warmup >= p.trainSteps)
+          errs.push("Warmup steps must be less than total training steps");
+        if (p.batchSize < 1) errs.push("Batch size must be positive");
+        if (MODELS[state.model].status !== "Ready")
+          errs.push("Selected model is not ready for training");
+
+        const box = $("#validationBox");
+        if (errs.length) {
+          box.innerHTML = `<div class="validation error"><span class="i">⚠</span>
+      <div><b>Configuration issues</b><ul>${errs.map((e) => `<li>${e}</li>`).join("")}</ul></div></div>`;
+        } else {
+          box.innerHTML = `<div class="validation" style="background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.3);color:#7ee787;">
+      <span class="i">✓</span><div>Configuration valid — ready to train</div></div>`;
+        }
+        $("#btnStart").disabled = errs.length > 0 || state.phase === "training";
+        return errs;
+      }
+
+      function renderAll() {
+        renderSummary();
+        renderEstimates();
+        validate();
+        $("#advCount").textContent =
+          Object.values(state.advanced).filter((v) => v !== false && v !== null)
+            .length + " enabled";
+        $("#lrVal").textContent = state.parameters.learningRate.toFixed(5);
+        $("#epVal").textContent = state.parameters.epochs;
+        $("#wdVal").textContent = state.parameters.weightDecay;
+        $("#vsVal").textContent =
+          Math.round(state.parameters.validationSplit * 100) + "%";
+      }
+
+      /* ============================================================
+   ACTIONS
+   ============================================================ */
+      function flash(msg) {
+        const t = $("#toast");
+        $("#toastMsg").textContent = msg;
+        t.classList.add("on");
+        clearTimeout(flash._t);
+        flash._t = setTimeout(() => t.classList.remove("on"), 2000);
+      }
+
+      $("#btnSave").onclick = () => {
+        const cfg = JSON.stringify(state, null, 2);
+        console.log("Saved config:", cfg);
+        flash("Configuration saved");
+      };
+
+      $("#btnStart").onclick = () => {
+        const errs = validate();
+        if (errs.length) {
+          flash("Fix configuration issues first");
+          return;
+        }
+        openConfirm();
+      };
+
+      function openConfirm() {
+        const p = state.parameters;
+        const m = MODELS[state.model];
+        const d = DATASETS[state.dataset] || DATASETS.customer_support_v3;
+        $("#confirmBody").innerHTML = `
+    <div class="sum-row"><span class="k">Model</span><span class="v">${m.name} ${m.version}</span></div>
+    <div class="sum-row"><span class="k">Dataset</span><span class="v">${state.uploadedFile ? state.uploadedFile.name : d.name}</span></div>
+    <div class="sum-row"><span class="k">Training type</span><span class="v">${trainingTypeLabel()}</span></div>
+    <div class="sum-row"><span class="k">Epochs</span><span class="v">${p.epochs}</span></div>
+    <div class="sum-row"><span class="k">Learning rate</span><span class="v">${p.learningRate.toFixed(5)}</span></div>
+    <div class="sum-row"><span class="k">Batch size</span><span class="v">${p.batchSize}</span></div>
+    <div class="sum-row"><span class="k">Validation split</span><span class="v">${Math.round(p.validationSplit * 100)}%</span></div>
+    <div class="sum-row"><span class="k">Training examples</span><span class="v">${$("#trainEx").textContent}</span></div>
+    <div class="sum-row"><span class="k">Est. time</span><span class="v">${$("#estTime").textContent}</span></div>
+    <div class="sum-row"><span class="k">Est. cost</span><span class="v" style="color:var(--accent-2)">${$("#estCost").textContent}</span></div>
+  `;
+        $("#confirmOverlay").classList.add("on");
+      }
+      function closeConfirm() {
+        $("#confirmOverlay").classList.remove("on");
+      }
+
+      function confirmStart() {
+        closeConfirm();
+        state.phase = "training";
+        state.trainedOnce = false;
+        $("#configView").style.display = "none";
+        $("#progressView").style.display = "block";
+        $("#sidebar").classList.add("open");
+        runTraining();
+      }
+
+      /* ============================================================
+   TRAINING SIMULATION
+   ============================================================ */
+      let trainTimer = null,
+        trainStart = 0;
+      function runTraining() {
+        const p = state.parameters;
+        const total = p.trainSteps;
+        let step = 0;
+        let trainLoss = 2.4,
+          valLoss = 2.6;
+        trainStart = Date.now();
+        $("#pLog").innerHTML = "";
+        logLine("info", "Initializing training job…");
+        logLine(
+          "info",
+          `Model: ${MODELS[state.model].name} · Dataset: ${$("#datasetSelect").selectedOptions[0].textContent}`,
+        );
+        logLine("ok", "Environment ready");
+
+        const t0 = Date.now();
+        const tick = () => {
+          // speed: complete in ~15s regardless
+          const target = 15_000;
+          const frac = Math.min(1, (Date.now() - t0) / target);
+          step = Math.floor(frac * total);
+          const pct = Math.round(frac * 100);
+
+          // losses
+          trainLoss =
+            2.4 * Math.exp(-2.5 * frac) + 0.15 + (Math.random() - 0.5) * 0.03;
+          valLoss =
+            2.55 * Math.exp(-2.2 * frac) + 0.22 + (Math.random() - 0.5) * 0.05;
+
+          // update UI
+          const circ = 2 * Math.PI * 52;
+          $("#ringFg").style.strokeDashoffset = circ * (1 - frac);
+          $("#progPct").textContent = pct + "%";
+          $("#pStatus").textContent =
+            frac < 0.05 ? "Warming up…" : frac < 1 ? "Training" : "Finalizing…";
+          $("#pStep").textContent =
+            `${step.toLocaleString()} / ${total.toLocaleString()}`;
+          const epoch = Math.min(p.epochs, Math.floor(frac * p.epochs) + 1);
+          $("#pEpoch").textContent = `${epoch} / ${p.epochs}`;
+          const elapsed = (Date.now() - trainStart) / 1000;
+          $("#pElapsed").textContent = fmtTime(elapsed);
+          const eta = frac > 0.02 ? (elapsed * (1 - frac)) / frac : null;
+          $("#pEta").textContent = eta != null ? fmtTime(eta) : "—";
+
+          $("#pTrainLoss").textContent = trainLoss.toFixed(4);
+          $("#pValLoss").textContent = valLoss.toFixed(4);
+          $("#pTrainTrend").textContent = "decreasing ↓";
+          $("#pValTrend").textContent =
+            valLoss < trainLoss * 1.1 ? "converging" : "slightly high";
+          $("#pValTrend").className =
+            "trend" + (valLoss > trainLoss * 1.15 ? " up" : "");
+
+          // log every ~10%
+          if (pct % 10 === 0 && pct !== tick._lastLog) {
+            tick._lastLog = pct;
+            logLine(
+              "",
+              `step ${step}/${total} · loss ${trainLoss.toFixed(4)} · val ${valLoss.toFixed(4)}`,
+            );
+          }
+
+          if (frac < 1) {
+            trainTimer = requestAnimationFrame(tick);
+          } else {
+            finishTraining();
+          }
+        };
+        trainTimer = requestAnimationFrame(tick);
+      }
+
+      function finishTraining() {
+        state.phase = "done";
+        state.trainedOnce = true;
+        $("#pStatus").textContent = "Complete";
+        $("#progPct").textContent = "100%";
+        $("#pStep").textContent =
+          `${state.parameters.trainSteps.toLocaleString()} / ${state.parameters.trainSteps.toLocaleString()}`;
+        $("#pEpoch").textContent =
+          `${state.parameters.epochs} / ${state.parameters.epochs}`;
+        $("#pEta").textContent = "00:00";
+        logLine("ok", "Training complete");
+        logLine("ok", `Final train loss: ${$("#pTrainLoss").textContent}`);
+        logLine("ok", `Final val loss: ${$("#pValLoss").textContent}`);
+        logLine("info", "Model checkpoint saved to /models/run-" + Date.now());
+        $("#btnNew").disabled = false;
+        flash("Training complete");
+      }
+
+      function logLine(kind, msg) {
+        const el = $("#pLog");
+        const t = new Date().toLocaleTimeString("en-GB", { hour12: false });
+        const cls = kind === "ok" ? "ok" : kind === "info" ? "info" : "";
+        el.insertAdjacentHTML(
+          "beforeend",
+          `<div class="line"><span class="t">${t}</span><span class="m ${cls}">${msg}</span></div>`,
+        );
+        el.scrollTop = el.scrollHeight;
+      }
+      function fmtTime(s) {
+        s = Math.round(s);
+        const m = Math.floor(s / 60),
+          sec = s % 60;
+        return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+      }
+
+      $("#btnCancel").onclick = () => {
+        if (trainTimer) cancelAnimationFrame(trainTimer);
+        logLine("info", "Training cancelled by user");
+        $("#pStatus").textContent = "Cancelled";
+        $("#btnNew").disabled = false;
+        state.phase = "config";
+        flash("Training cancelled");
+      };
+      $("#btnNew").onclick = () => {
+        if (trainTimer) cancelAnimationFrame(trainTimer);
+        $("#progressView").style.display = "none";
+        $("#configView").style.display = "block";
+        state.phase = "config";
+        renderAll();
+      };
+
+      /* ============================================================
+   BOOT
+   ============================================================ */
+      function boot() {
+        renderModels();
+        renderModelDetail();
+        renderOptions();
+        renderDataset();
+        bindParams();
+        bindDataset();
+        bindChecks(
+          "[data-behavior]",
+          (k) => state.behavior[k],
+          (k, v) => (state.behavior[k] = v),
+        );
+        bindChecks(
+          "[data-pre]",
+          (k) => state.datasetCfg.preprocessing[k],
+          (k, v) => (state.datasetCfg.preprocessing[k] = v),
+        );
+        $$("[data-aug]").forEach(
+          (el) =>
+            (el.onclick = () => {
+              state.datasetCfg.augmentation = !state.datasetCfg.augmentation;
+              refreshCheckStates();
+              renderAll();
+            }),
+        );
+        $$("#earlyStop").forEach(
+          (el) =>
+            (el.onclick = () => {
+              state.advanced.earlyStop = !state.advanced.earlyStop;
+              refreshCheckStates();
+              renderAll();
+            }),
+        );
+        refreshCheckStates();
+        renderAll();
+
+        // keep dataset select in sync
+        $("#datasetSelect").value = state.dataset;
+      }
+      boot();
+    </script>
+  </body>
+</html>
